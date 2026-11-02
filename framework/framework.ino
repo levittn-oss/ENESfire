@@ -10,28 +10,45 @@ const float TURNING_DAMPING_FACTOR = 0.05;
 const float MOVEMENT_BASE_PWR = 127; // power/motor to use during a move() for every meter away from the target position
 const float MOVEMENT_DAMPING_FACTOR = 0.05;
 const unsigned long WAIT_TIME = 10;
-const unsigned char LEFT_MOTOR_BACK_PIN_NUM = 6;
-const unsigned char LEFT_MOTOR_FORTH_PIN_NUM = 7;
-const unsigned char RIGHT_MOTOR_BACK_PIN_NUM = 8;
-const unsigned char RIGHT_MOTOR_FORTH_PIN_NUM = 9;
-const unsigned char ULTRASONIC_SENSOR_TRIG_PIN_NUM = 10;
-const unsigned char ULTRASONIC_SENSOR_ECHO_PIN_NUM = 11;
+const unsigned char LEFT_MOTOR_BACK_PIN_NUM = 0;
+const unsigned char LEFT_MOTOR_FORTH_PIN_NUM = 5;
+const unsigned char RIGHT_MOTOR_BACK_PIN_NUM = 0;
+const unsigned char RIGHT_MOTOR_FORTH_PIN_NUM = 3;
+const unsigned char ULTRASONIC_SENSOR_TRIG_PIN_NUM = 0;
+const unsigned char ULTRASONIC_SENSOR_ECHO_PIN_NUM = 0;
 const int ARUCO_MARKER_ID = 3;
 
 // apply motor power values
 void maneuver(int leftPwr, int rightPwr) {
 	leftPwr = constrain(leftPwr, -255, 255);
 	rightPwr = constrain(rightPwr, -255, 255);
-	analogWrite(LEFT_MOTOR_BACK_PIN_NUM, leftPwr < 0 ? -leftPwr : 0);
-	analogWrite(LEFT_MOTOR_FORTH_PIN_NUM, leftPwr > 0 ? leftPwr : 0);
-	analogWrite(LEFT_MOTOR_BACK_PIN_NUM, rightPwr < 0 ? -rightPwr : 0);
-	analogWrite(LEFT_MOTOR_FORTH_PIN_NUM, rightPwr > 0 ? rightPwr : 0);
+	int leftMagnitude = abs(leftPwr);
+	int rightMagnitude = abs(rightPwr);
+	if (leftMagnitude == 0) {
+		analogWrite(LEFT_MOTOR_BACK_PIN_NUM, 0);
+		digitalWrite(LEFT_MOTOR_FORTH_PIN_NUM, LOW);
+	} else {
+		bool leftDirectionHigh = leftPwr > 0;
+		analogWrite(LEFT_MOTOR_BACK_PIN_NUM, 0);
+		digitalWrite(LEFT_MOTOR_FORTH_PIN_NUM, leftDirectionHigh ? HIGH : LOW);
+		// Complement PWM when the direction input is high, braking between pulses.
+		analogWrite(LEFT_MOTOR_BACK_PIN_NUM, leftDirectionHigh ? 255 - leftMagnitude : leftMagnitude);
+	}
+	if (rightMagnitude == 0) {
+		analogWrite(RIGHT_MOTOR_FORTH_PIN_NUM, 0);
+		digitalWrite(RIGHT_MOTOR_BACK_PIN_NUM, LOW);
+	} else {
+		bool rightDirectionHigh = rightPwr < 0;
+		analogWrite(RIGHT_MOTOR_FORTH_PIN_NUM, 0);
+		digitalWrite(RIGHT_MOTOR_BACK_PIN_NUM, rightDirectionHigh ? HIGH : LOW);
+		analogWrite(RIGHT_MOTOR_FORTH_PIN_NUM, rightDirectionHigh ? 255 - rightMagnitude : rightMagnitude);
+	}
 }
 
 // get distance on the ultrasonic sensor
 float queryDist() {
 	digitalWrite(ULTRASONIC_SENSOR_TRIG_PIN_NUM, HIGH);
-	delayMicrosecond(10);
+	delayMicroseconds(10);
 	digitalWrite(ULTRASONIC_SENSOR_TRIG_PIN_NUM, LOW);
 	return pulseIn(ULTRASONIC_SENSOR_ECHO_PIN_NUM, HIGH) * 0.01715;
 }
@@ -79,7 +96,7 @@ bool move(float x, float y) {
 		if (curDist <= TARG_DIST_TOLERANCE) {
 			return true;
 		}
-		turn(atan2(y - Enes100.getY(), x - Enes100.getX()))
+		turn(atan2(y - Enes100.getY(), x - Enes100.getX()));
 		if (queryDist() <= OBSTACLE_DIST_TOLERANCE) {
 			return false;
 		}
@@ -126,16 +143,14 @@ void completeMission() {
 }
 
 void setup() {
-	/*Enes100.begin("Swiss Cheese", FIRE, ARUCO_MARKER_ID, 1116);
 	pinMode(LEFT_MOTOR_BACK_PIN_NUM, OUTPUT);
 	pinMode(LEFT_MOTOR_FORTH_PIN_NUM, OUTPUT);
 	pinMode(RIGHT_MOTOR_BACK_PIN_NUM, OUTPUT);
 	pinMode(RIGHT_MOTOR_FORTH_PIN_NUM, OUTPUT);
 	pinMode(ULTRASONIC_SENSOR_TRIG_PIN_NUM, OUTPUT);
 	pinMode(ULTRASONIC_SENSOR_ECHO_PIN_NUM, INPUT);
-	doMission();
-	completeMission();*/
-	maneuver(100, 100);
+	digitalWrite(ULTRASONIC_SENSOR_TRIG_PIN_NUM, LOW);
+	maneuver(0, 0);
 }
 
 void loop() {
