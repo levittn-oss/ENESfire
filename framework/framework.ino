@@ -16,7 +16,7 @@ const unsigned char RIGHT_MOTOR_BACK_PIN_NUM = 0;
 const unsigned char RIGHT_MOTOR_FORTH_PIN_NUM = 3;
 const unsigned char ULTRASONIC_SENSOR_TRIG_PIN_NUM = 0;
 const unsigned char ULTRASONIC_SENSOR_ECHO_PIN_NUM = 0;
-const int ARUCO_MARKER_ID = 3;
+const int ARUCO_MARKER_ID = 131;
 
 // apply motor power values
 void maneuver(int leftPwr, int rightPwr) {
